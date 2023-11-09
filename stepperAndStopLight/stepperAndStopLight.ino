@@ -17,6 +17,20 @@ const int stepsPerRevolution = 2048;  // change this to fit the number of steps 
 #define IN2 18
 #define IN3 5
 #define IN4 17
+
+#define GREEN_PIN 21  // GIOP21 pin connected to button
+#define YELLOW_PIN 13  // GIOP21 pin connected to button
+
+#define GREEN_LED 16  // GIOP21 pin connected to button
+#define RED_LED 25  // GIOP21 pin connected to button
+
+// Variables will change:
+int greenLastState = LOW;  // the previous state from the input pin
+int greenCurrentState;     // the current reading from the input pin
+
+int yellowLastState = LOW;  // the previous state from the input pin
+int yellowCurrentState;     // the current reading from the input pin
+
 Servo myservo;  // create servo object to control a servo
 Servo barrier;
 // twelve servo objects can be created on most boards
@@ -29,8 +43,11 @@ Stepper myStepper(stepsPerRevolution, IN1, IN3, IN2, IN4);
 
 void setup() {
   // initialize digital pin GPIO18 as an output.
-  pinMode(25, OUTPUT);
-  pinMode(16, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+
+  pinMode(GREEN_PIN, INPUT_PULLUP);
+  pinMode(YELLOW_PIN, INPUT_PULLUP);
 
     // set the speed at 5 rpm
   myStepper.setSpeed(5);
@@ -44,46 +61,156 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  digitalWrite(25, HIGH); // turn the LED on
-  delay(10000);             // wait for 500 milliseconds
-  digitalWrite(25, LOW);  // turn the LED off
-  delay(500);             // wait for 500 milliseconds
+  greenCurrentState = digitalRead(GREEN_PIN);
+  yellowCurrentState = digitalRead(YELLOW_PIN);
 
-  digitalWrite(16, HIGH); // turn the LED on
-  delay(10000);             // wait for 500 milliseconds
-  digitalWrite(16, LOW);  // turn the LED off
-  delay(500);   
+  if (greenLastState == HIGH && greenCurrentState == LOW) {
+    Serial.println("green pressed");
 
+    // turn RED LED off
+    digitalWrite(RED_LED, LOW);  // turn the LED off
+    delay(500);             // wait for 500 milliseconds
+    Serial.println("red led off");
+
+    // turn GREEN LED on
+    digitalWrite(GREEN_LED, HIGH); // turn the LED on
+    Serial.println("turn GREEN LED on");
+
+    // open barrier
     for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    barrier.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
-  }
+      barrier.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+    Serial.println("open barrier");
 
-  for (pos = 90; pos <= 270; pos += 12) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
-  }
+    delay(500);             // wait for 500 milliseconds
 
-  for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    barrier.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
-  }
+    // propel the car 
+    for (pos = 90; pos <= 270; pos += 12) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      myservo.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+
+    Serial.println("car push");
+
+    // gate closes
+    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      barrier.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+    Serial.println("gate close");
+    
+    // servo resets
+    for (pos = 270; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
+      myservo.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+    Serial.println("reset servo");
+
+    // green LED OFF
+    digitalWrite(GREEN_LED, LOW);  // turn the LED off
+    Serial.println("green off");
+    delay(500);   
+
+    // red LED on
+    digitalWrite(RED_LED, HIGH); // turn the LED on
+    Serial.println("red on");
+    delay(500);             // wait for 500 milliseconds
+
+  } 
   
-  for (pos = 270; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+  // else if (greenLastState == LOW && greenCurrentState == HIGH) {
+  //   Serial.println("green released");
+  // }
+
+  else if (yellowLastState == HIGH && yellowCurrentState == LOW) {
+    Serial.println("yellow pressed");
+
+    // gate opens 
+    for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+      barrier.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+    Serial.println("gate open");
+
+    delay(500);   
+
+    // car back
+    Serial.println("counterclockwise");
+    myStepper.step(-stepsPerRevolution);
+    delay(1000);
+    Serial.println("car back");
+
+    Serial.println("clockwise");
+    myStepper.step(stepsPerRevolution);
+    delay(500);
+
+    // gate closes
+    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      barrier.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(15);                       // waits 15ms for the servo to reach the position
+    }
+    Serial.println("gate close");
+
+  } 
+
+  // else if (yellowLastState == LOW && yellowCurrentState == HIGH) {
+  //   Serial.println("yellow released");
+  // }
+  else {
+    digitalWrite(RED_LED, HIGH); // turn the LED on
+     Serial.println("neutral state");
+      Serial.println("red on");
   }
 
+  greenLastState = greenCurrentState;
+  yellowLastState = yellowCurrentState;
 
-  Serial.println("clockwise");
-  myStepper.step(stepsPerRevolution);
-  delay(1000);
 
-  // step one revolution in the other direction:
-  Serial.println("counterclockwise");
-  myStepper.step(-stepsPerRevolution);
-  delay(1000);
+
+  // digitalWrite(RED_LED, HIGH); // turn the LED on
+  // delay(10000);             // wait for 500 milliseconds
+  // digitalWrite(RED_LED, LOW);  // turn the LED off
+  // delay(500);             // wait for 500 milliseconds
+
+  // digitalWrite(GREEN_LED, HIGH); // turn the LED on
+  // delay(10000);             // wait for 500 milliseconds
+  // digitalWrite(GREEN_LED, LOW);  // turn the LED off
+  // delay(500);   
+
+  // for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+  //   barrier.write(pos);              // tell servo to go to position in variable 'pos'
+  //   delay(15);                       // waits 15ms for the servo to reach the position
+  // }
+
+  // for (pos = 90; pos <= 270; pos += 12) { // goes from 0 degrees to 180 degrees
+  //   // in steps of 1 degree
+  //   myservo.write(pos);              // tell servo to go to position in variable 'pos'
+  //   delay(15);                       // waits 15ms for the servo to reach the position
+  // }
+
+  // for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+  //   // in steps of 1 degree
+  //   barrier.write(pos);              // tell servo to go to position in variable 'pos'
+  //   delay(15);                       // waits 15ms for the servo to reach the position
+  // }
+  
+  // for (pos = 270; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
+  //   myservo.write(pos);              // tell servo to go to position in variable 'pos'
+  //   delay(15);                       // waits 15ms for the servo to reach the position
+  // }
+
+
+  // Serial.println("clockwise");
+  // myStepper.step(stepsPerRevolution);
+  // delay(1000);
+
+  // // step one revolution in the other direction:
+  // Serial.println("counterclockwise");
+  // myStepper.step(-stepsPerRevolution);
+  // delay(1000);
 
 }
