@@ -50,7 +50,7 @@ void setup() {
   pinMode(YELLOW_PIN, INPUT_PULLUP);
 
     // set the speed at 5 rpm
-  myStepper.setSpeed(5);
+  myStepper.setSpeed(15);
 
   myservo.attach(14);  // attaches the servo on pin 14 to the servo object
   barrier.attach(26);
@@ -76,17 +76,18 @@ void loop() {
     digitalWrite(GREEN_LED, HIGH); // turn the LED on
     Serial.println("turn GREEN LED on");
 
-    // open barrier
-    for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    // gate open
+    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
       barrier.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
     }
-    Serial.println("open barrier");
+    Serial.println("gate open");
 
     delay(500);             // wait for 500 milliseconds
 
     // propel the car 
-    for (pos = 90; pos <= 270; pos += 12) { // goes from 0 degrees to 180 degrees
+    for (pos = 140; pos <= 320; pos += 60) { // goes from 0 degrees to 180 degrees
       // in steps of 1 degree
       myservo.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
@@ -94,16 +95,16 @@ void loop() {
 
     Serial.println("car push");
 
-    // gate closes
-    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
-      // in steps of 1 degree
+    // close barrier
+    for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
       barrier.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
     }
-    Serial.println("gate close");
+    Serial.println("close barrier");
+
     
     // servo resets
-    for (pos = 270; pos >= 90; pos -= 1) { // goes from 180 degrees to 0 degrees
+    for (pos = 320; pos >= 140; pos -= 1) { // goes from 180 degrees to 0 degrees
       myservo.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
     }
@@ -128,8 +129,9 @@ void loop() {
   else if (yellowLastState == HIGH && yellowCurrentState == LOW) {
     Serial.println("yellow pressed");
 
-    // gate opens 
-    for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    // gate open
+    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
       barrier.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
     }
@@ -140,16 +142,22 @@ void loop() {
     // car back
     Serial.println("counterclockwise");
     myStepper.step(-stepsPerRevolution);
+    myStepper.step(-stepsPerRevolution);
+    myStepper.step(-stepsPerRevolution);
+    myStepper.step(-stepsPerRevolution);
+
     delay(1000);
     Serial.println("car back");
 
     Serial.println("clockwise");
     myStepper.step(stepsPerRevolution);
+    myStepper.step(stepsPerRevolution);
+    myStepper.step(stepsPerRevolution);
+    myStepper.step(stepsPerRevolution);
     delay(500);
 
-    // gate closes
-    for (pos = 0; pos <= 90; pos += 1) { // goes from 0 degrees to 180 degrees
-      // in steps of 1 degree
+    // close barrier
+    for (pos = 90; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
       barrier.write(pos);              // tell servo to go to position in variable 'pos'
       delay(15);                       // waits 15ms for the servo to reach the position
     }
